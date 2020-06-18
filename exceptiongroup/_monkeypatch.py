@@ -11,7 +11,7 @@ import textwrap
 import traceback
 import warnings
 
-from . import ExceptionGroup
+from ._exception_group import ExceptionGroup
 
 traceback_exception_original_init = traceback.TracebackException.__init__
 

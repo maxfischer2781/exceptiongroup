@@ -3,7 +3,7 @@
 ################################################################
 
 import copy
-from . import ExceptionGroup
+from ._exception_group import ExceptionGroup
 
 
 def split(exc_type, exc, *, match=None):
