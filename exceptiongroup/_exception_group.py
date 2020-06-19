@@ -4,12 +4,13 @@ from weakref import WeakValueDictionary
 
 class ExceptionGroupMeta(type):
     """
-    Metaclass to specialize :py:exc:`ExceptionGroup` for specific child types
+    Metaclass to specialize :py:exc:`ExceptionGroup` for specific child exception types
 
     Provides specialization via subscription and corresponding type checks:
     ``Class[spec]`` and ``issubclass(Class[spec], Class[spec, spec2])``. Accepts
-    the specialization ``...`` (a :py:const:`Ellipsis`) to mark the specialization
-    as inclusive, meaning a subtype may have additional specializations.
+    the specialization ``...`` (an :py:const:`Ellipsis`) to mark the specialization
+    as inclusive, meaning a subtype may have additional specializations. Specialisation
+    is covariant, i.e. ``issubclass(A, B)`` implies ``issubclass(Class[A], Class[B])``
     """
 
     # metaclass instance fields - i.e. class fields
@@ -125,7 +126,7 @@ class ExceptionGroupMeta(type):
     # of ``Cls(A(), B(), C())``. Errors should be reported appropriately.
     def __getitem__(
         cls,
-        item: Union[  # [Exception] or [...] or [Exception, ...]
+        item: Union[
             Type[BaseException],
             "ellipsis",
             Tuple[Union[Type[BaseException], "ellipsis"], ...],
@@ -211,6 +212,13 @@ class ExceptionGroup(BaseException, metaclass=ExceptionGroupMeta):
       ValueError: if the exceptions and sources lists don't have the same
           length.
 
+    The class can be subscribed with exception types, such as
+    ``ExceptionGroup[KeyError, RuntimeError]``. When used in an ``except`` clause,
+    this matches only the specified combination of sub-exceptions.
+    As fpr other exceptions, subclasses are respected, so
+    ``ExceptionGroup[LookupError]`` matches an ``ExceptionGroup`` of ``KeyError``,
+    ``IndexError`` or both. Use a literal ``...`` (an :py:const:`Ellipsis`) to
+    allow for additional, unspecified matches.
     """
 
     # metaclass instance fields - keep in sync with ExceptionGroupMeta
