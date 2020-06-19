@@ -44,6 +44,27 @@ def test_exception_group_init_when_exceptions_messages_not_equal():
         )
 
 
+def test_exception_group_catch_exact():
+    with pytest.raises(ExceptionGroup[ZeroDivisionError]):
+        try:
+            raise_group()
+        except ExceptionGroup[KeyError]:
+            pytest.fail("Group may not match unrelated Exception types")
+
+
+def test_exception_group_covariant():
+    with pytest.raises(ExceptionGroup[LookupError]):
+        raise ExceptionGroup("one", [KeyError()], ["explicit test"])
+    with pytest.raises(ExceptionGroup[LookupError]):
+        raise ExceptionGroup("one", [IndexError()], ["explicit test"])
+    with pytest.raises(ExceptionGroup[LookupError]):
+        raise ExceptionGroup(
+            "several subtypes",
+            [KeyError(), IndexError()],
+            ["initial match", "trailing match to same base case"]
+        )
+
+
 def test_exception_group_str():
     memberA = ValueError("memberA")
     memberB = ValueError("memberB")
