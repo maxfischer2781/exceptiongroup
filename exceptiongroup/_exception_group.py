@@ -14,13 +14,13 @@ class ExceptionGroupMeta(type):
     """
 
     # metaclass instance fields - i.e. class fields
-    #: the base case, i.e. Class
-    base_case: "ExceptionGroupMeta"
+    #: the base case, i.e. Class of Class[spec, spec2]
+    __origin__: "ExceptionGroupMeta"
     #: whether additional child exceptions are allowed in issubclass checking
-    inclusive: bool
-    #: the specialization of some class - e.g. (TypeError,) for Class[TypeError]
+    _inclusive: bool
+    #: the specialization of some class - e.g. (spec, spec2) for Class[spec, spec2]
     #: or None for the base case
-    specializations: Optional[Tuple[Type[BaseException], ...]]
+    __args__: Optional[Tuple[Type[BaseException], ...]]
     #: internal cache for currently used specializations, i.e. mapping spec: Class[spec]
     _specs_cache: WeakValueDictionary
 
@@ -37,13 +37,13 @@ class ExceptionGroupMeta(type):
             mcs, name, bases, namespace, **kwargs
         )  # type: ExceptionGroupMeta
         if specializations is not None:
-            base_case = bases[0]
+            origin = bases[0]
         else:
             inclusive = True
-            base_case = cls
-        cls.inclusive = inclusive
-        cls.specializations = specializations
-        cls.base_case = base_case
+            origin = cls
+        cls._inclusive = inclusive
+        cls.__args__ = specializations
+        cls.__origin__ = origin
         return cls
 
     # Implementation Note:
@@ -64,17 +64,17 @@ class ExceptionGroupMeta(type):
         if cls is subclass:
             return True
         try:
-            base_case = subclass.base_case
+            origin = subclass.__origin__
         except AttributeError:
             return False
         else:
             # check that the specialization matches
-            if base_case is not cls.base_case:
+            if origin is not cls.__origin__:
                 return False
             # except EG:
             # issubclass(EG[???], EG)
             # the base class is the superclass of all its specializations
-            if cls.specializations is None:
+            if cls.__args__ is None:
                 return True
             # except EG[XXX]:
             # issubclass(EG[???], EG[XXX])
@@ -95,15 +95,15 @@ class ExceptionGroupMeta(type):
         matched_specializations = all(
             any(
                 issubclass(child, specialization)
-                for child in subclass.specializations
+                for child in subclass.__args__
             )
-            for specialization in cls.specializations
+            for specialization in cls.__args__
         )
         # issubclass(EG[A, B], EG[A, C])
         if not matched_specializations:
             return False
         # issubclass(EG[A, B], EG[A, ...])
-        elif cls.inclusive:
+        elif cls._inclusive:
             # We do not care if ``subclass`` has unmatched specializations
             return True
         # issubclass(EG[A, B], EG[A, B]) vs issubclass(EG[A, B, C], EG[A, B])
@@ -114,8 +114,8 @@ class ExceptionGroupMeta(type):
             # This is needed in case that we have duplicate matches. Consider:
             # EG[KeyError, LookupError], EG[KeyError, RuntimeError]
             return not any(
-                not issubclass(child, cls.specializations)
-                for child in subclass.specializations
+                not issubclass(child, cls.__args__)
+                for child in subclass.__args__
             )
 
     # specialization Interface
@@ -136,7 +136,7 @@ class ExceptionGroupMeta(type):
         # validate/normalize parameters
         #
         # Cls[A, B][C]
-        if cls.specializations is not None:
+        if cls.__args__ is not None:
             raise TypeError(
                 f"Cannot specialize already specialized {cls.__name__!r}"
             )
@@ -223,12 +223,12 @@ class ExceptionGroup(BaseException, metaclass=ExceptionGroupMeta):
 
     # metaclass instance fields - keep in sync with ExceptionGroupMeta
     #: the base case, i.e. this class
-    base_case: ClassVar[ExceptionGroupMeta]
+    __origin__: ClassVar[ExceptionGroupMeta]
     #: whether additional child exceptions are allowed in issubclass checking
-    inclusive: ClassVar[bool]
+    _inclusive: ClassVar[bool]
     #: the specialization of some class - e.g. (TypeError,) for Class[TypeError]
     #: or None for the base case
-    specializations: ClassVar[Optional[Tuple[Type[BaseException], ...]]]
+    __args__: ClassVar[Optional[Tuple[Type[BaseException], ...]]]
     #: internal cache for currently used specializations, i.e. mapping spec: Class[spec]
     _specs_cache = WeakValueDictionary()
     # instance fields
@@ -244,11 +244,11 @@ class ExceptionGroup(BaseException, metaclass=ExceptionGroupMeta):
         exceptions: Sequence[BaseException],
         sources,
     ):
-        if cls.specializations is not None:
+        if cls.__args__ is not None:
             # forbid EG[A, B, C]()
             if not exceptions:
                 raise TypeError(
-                    f"specialisation of {cls.specializations} does not match"
+                    f"specialisation of {cls.__args__} does not match"
                     f" empty exceptions; Note: Do not 'raise {cls.__name__}'"
                 )
             # TODO: forbid EG[A, B, C](d, e, f, g)
