@@ -237,14 +237,14 @@ class ExceptionGroup(BaseException, metaclass=ExceptionGroupMeta):
         exceptions: "Sequence[Union[ExceptionGroup, Exception]]",
         sources,
     ):
-        # TODO: this check should likely be inverted
-        if not exceptions:
+        if cls.specializations is not None:
             # forbid EG[A, B, C]()
-            if cls.specializations is not None:
+            if not exceptions:
                 raise TypeError(
                     f"specialisation of {cls.specializations} does not match"
-                    f" {exceptions!r}; Note: Do not 'raise {cls.__name__}'"
+                    f" empty exceptions; Note: Do not 'raise {cls.__name__}'"
                 )
+            # TODO: forbid EG[A, B, C](d, e, f, g)
             return super().__new__(cls)
         special_cls = cls[tuple(type(child) for child in exceptions)]
         return super().__new__(special_cls)
