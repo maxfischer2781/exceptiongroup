@@ -229,14 +229,15 @@ class ExceptionGroup(BaseException, metaclass=ExceptionGroupMeta):
     exceptions: "Tuple[Union[ExceptionGroup, Exception]]"
     sources: Tuple
 
-    # __new__ automatically specialises Concurrent to match its children.
-    # Concurrent(A(), B()) => Concurrent[A, B](A(), B())
+    # __new__ automatically specialises ExceptionGroup to match its children.
+    # ExceptionGroup(A(), B()) => ExceptionGroup[A, B](A(), B())
     def __new__(
         cls: "Type[ExceptionGroup]",
         message: str,
         exceptions: "Sequence[Union[ExceptionGroup, Exception]]",
         sources,
     ):
+        # TODO: this check should likely be inverted
         if not exceptions:
             # forbid EG[A, B, C]()
             if cls.specializations is not None:
