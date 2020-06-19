@@ -260,7 +260,7 @@ class ExceptionGroup(BaseException, metaclass=ExceptionGroupMeta):
         super().__init__(message, exceptions, sources)
         self.exceptions = tuple(exceptions)
         for exc in self.exceptions:
-            if not isinstance(exc, Exception):
+            if not isinstance(exc, BaseException):
                 raise TypeError(
                     "Expected an exception object, not {!r}".format(exc)
                 )
