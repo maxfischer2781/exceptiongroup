@@ -22,9 +22,6 @@ matrix:
     - python: 3.9-dev
     - os: osx
       language: generic
-      env: MACPYTHON=3.5.4
-    - os: osx
-      language: generic
       env: MACPYTHON=3.6.6
     - os: osx
       language: generic
