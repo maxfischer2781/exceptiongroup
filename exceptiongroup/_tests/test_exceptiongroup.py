@@ -65,6 +65,15 @@ def test_exception_group_covariant():
         )
 
 
+def test_exception_group_catch_inclusive():
+    with pytest.raises(ExceptionGroup[ZeroDivisionError, ...]):
+        raise_group()
+    # inclusive catch-all still requires specific types to match
+    with pytest.raises(ExceptionGroup[ZeroDivisionError]):
+        with pytest.raises(ExceptionGroup[KeyError, ...]):
+            raise_group()
+
+
 def test_exception_group_str():
     memberA = ValueError("memberA")
     memberB = ValueError("memberB")
