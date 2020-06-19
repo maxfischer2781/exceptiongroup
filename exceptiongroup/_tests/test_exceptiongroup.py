@@ -44,6 +44,26 @@ def test_exception_group_init_when_exceptions_messages_not_equal():
         )
 
 
+def test_exception_group_in_except():
+    """Verify that the hooks of ExceptionGroup work with `except` syntax"""
+    try:
+        raise_group()
+    except ExceptionGroup[ZeroDivisionError]:
+        pass
+    except BaseException:
+        pytest.fail("ExceptionGroup did not trigger except clause")
+    try:
+        raise ExceptionGroup(
+            "message", [KeyError(), RuntimeError()], ["first", "second"]
+        )
+    except (ExceptionGroup[KeyError], ExceptionGroup[RuntimeError]):
+        pytest.fail("ExceptionGroup triggered too specific except clause")
+    except ExceptionGroup[KeyError, RuntimeError]:
+        pass
+    except BaseException:
+        pytest.fail("ExceptionGroup did not trigger except clause")
+
+
 def test_exception_group_catch_exact():
     with pytest.raises(ExceptionGroup[ZeroDivisionError]):
         try:
@@ -68,10 +88,11 @@ def test_exception_group_covariant():
 def test_exception_group_catch_inclusive():
     with pytest.raises(ExceptionGroup[ZeroDivisionError, ...]):
         raise_group()
-    # inclusive catch-all still requires specific types to match
     with pytest.raises(ExceptionGroup[ZeroDivisionError]):
-        with pytest.raises(ExceptionGroup[KeyError, ...]):
+        try:
             raise_group()
+        except ExceptionGroup[KeyError, ...]:
+            pytest.fail("inclusive catch-all still requires all specific types to match")
 
 
 def test_exception_group_str():
