@@ -19,7 +19,7 @@ class ExceptionGroupMeta(type):
     inclusive: bool
     #: the specialization of some class - e.g. (TypeError,) for Class[TypeError]
     #: or None for the base case
-    specializations: "Optional[Tuple[Type[Union[ExceptionGroup, Exception]], ...]]"
+    specializations: Optional[Tuple[Type[BaseException], ...]]
     #: internal cache for currently used specializations, i.e. mapping spec: Class[spec]
     _specs_cache: WeakValueDictionary
 
@@ -28,7 +28,7 @@ class ExceptionGroupMeta(type):
         name: str,
         bases: Tuple[Type, ...],
         namespace: Dict[str, Any],
-        specializations: "Optional[Tuple[Type[Union[ExceptionGroup, Exception]], ...]]" = None,
+        specializations: Optional[Tuple[Type[BaseException], ...]] = None,
         inclusive: bool = True,
         **kwargs,
     ):
@@ -126,10 +126,9 @@ class ExceptionGroupMeta(type):
     def __getitem__(
         cls,
         item: Union[  # [Exception] or [...] or [Exception, ...]
-            Type[Exception],
-            "Type[ExceptionGroup]",
+            Type[BaseException],
             "ellipsis",
-            'Tuple[Union[Type[ExceptionGroup], Type[Exception], "ellipsis"], ...]',
+            Tuple[Union[Type[BaseException], "ellipsis"], ...],
         ],
     ):
         """``cls[item]`` - specialize ``cls`` with ``item``"""
@@ -145,19 +144,19 @@ class ExceptionGroupMeta(type):
             return cls
         # Cls[item]
         elif type(item) is not tuple:
-            if not issubclass(item, (Exception, cls)):
+            if not issubclass(item, BaseException):
                 raise TypeError(
-                    f"expected an Exception subclass, not {item!r}"
+                    f"expected a BaseException subclass, not {item!r}"
                 )
             item = (item,)
         # Cls[item1, item2]
         else:
             if not all(
-                (child is ...) or issubclass(child, (Exception, cls))
+                (child is ...) or issubclass(child, BaseException)
                 for child in item
             ):
                 raise TypeError(
-                    f"expected a tuple of Exception subclasses, not {item!r}"
+                    f"expected a tuple of BaseException subclasses, not {item!r}"
                 )
         return cls._get_specialization(item)
 
@@ -221,12 +220,12 @@ class ExceptionGroup(BaseException, metaclass=ExceptionGroupMeta):
     inclusive: ClassVar[bool]
     #: the specialization of some class - e.g. (TypeError,) for Class[TypeError]
     #: or None for the base case
-    specializations: "ClassVar[Optional[Tuple[Type[Union[ExceptionGroup, Exception]], ...]]]"
+    specializations: ClassVar[Optional[Tuple[Type[BaseException], ...]]]
     #: internal cache for currently used specializations, i.e. mapping spec: Class[spec]
     _specs_cache = WeakValueDictionary()
     # instance fields
     message: str
-    exceptions: "Tuple[Union[ExceptionGroup, Exception]]"
+    exceptions: Tuple[BaseException]
     sources: Tuple
 
     # __new__ automatically specialises ExceptionGroup to match its children.
@@ -234,7 +233,7 @@ class ExceptionGroup(BaseException, metaclass=ExceptionGroupMeta):
     def __new__(
         cls: "Type[ExceptionGroup]",
         message: str,
-        exceptions: "Sequence[Union[ExceptionGroup, Exception]]",
+        exceptions: Sequence[BaseException],
         sources,
     ):
         if cls.specializations is not None:
