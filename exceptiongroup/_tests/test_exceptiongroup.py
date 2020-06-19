@@ -17,9 +17,10 @@ def test_exception_group_init():
     group = ExceptionGroup(
         "many error.", [memberA, memberB], [str(memberA), str(memberB)]
     )
-    assert group.exceptions == [memberA, memberB]
+    assert group.exceptions == (memberA, memberB)
     assert group.message == "many error."
-    assert group.sources == [str(memberA), str(memberB)]
+    assert group.sources == (str(memberA), str(memberB))
+    # `.args` contains the unmodified arguments
     assert group.args == (
         "many error.",
         [memberA, memberB],
