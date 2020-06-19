@@ -92,7 +92,9 @@ def test_exception_group_catch_inclusive():
         try:
             raise_group()
         except ExceptionGroup[KeyError, ...]:
-            pytest.fail("inclusive catch-all still requires all specific types to match")
+            pytest.fail(
+                "inclusive catch-all still requires all specific types to match"
+            )
 
 
 def test_exception_group_str():
