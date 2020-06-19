@@ -61,7 +61,7 @@ def test_exception_group_covariant():
         raise ExceptionGroup(
             "several subtypes",
             [KeyError(), IndexError()],
-            ["initial match", "trailing match to same base case"]
+            ["initial match", "trailing match to same base case"],
         )
 
 
